@@ -73,9 +73,9 @@ dataset = tf.data.Dataset.from_generator(
     output_shapes=((10, 9, 16), ((1), (1)))
 )
 
-dataset = dataset.shuffle(3000).batch(args.batch_size, drop_remainder=True).prefetch(2)
+dataset = dataset.cache().shuffle(3000).batch(args.batch_size, drop_remainder=True).prefetch(2)
 
-checkpoint = keras.callbacks.ModelCheckpoint('cp/' + model_name, save_best_only=False, save_weights_only=True)
+checkpoint = keras.callbacks.ModelCheckpoint('cp/' + model_name + '/cp', save_best_only=False, save_weights_only=True)
 tensorboard = keras.callbacks.TensorBoard('logs/' + model_name)
 
 mirrored_strategy = tf.distribute.MirroredStrategy()
@@ -83,7 +83,7 @@ with mirrored_strategy.scope():
     p_model, v_model, full_model = keras_network.gen_network(args.filters, args.n_blocks)
     full_model.compile(loss=('sparse_categorical_crossentropy', 'mse'), optimizer='adam')
 
-    latest = tf.train.latest_checkpoint('cp/')
+    latest = tf.train.latest_checkpoint('cp/' + model_name + '/')
     if latest != None:
         full_model.load_weights(latest)
 
